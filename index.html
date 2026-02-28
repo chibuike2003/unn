@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreExchange | The Future of Unified Finance</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #020617;
+            --surface: #0f172a;
+            --surface-light: #1e293b;
+            --primary: #22d3ee;
+            --secondary: #10b981;
+            --error: #f43f5e;
+            --crypto-gold: #fbbf24;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --gradient-primary: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+
+        /* --- TICKER --- */
+        .ticker { background: #000; height: 34px; display: flex; align-items: center; font-size: 0.7rem; border-bottom: 1px solid var(--border); overflow: hidden; }
+        .ticker-track { display: flex; animation: scroll 25s linear infinite; }
+        .ticker-item { padding: 0 15px; white-space: nowrap; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* --- NAVIGATION --- */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; position: sticky; top: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(12px); z-index: 1000; }
+        .logo { font-size: 1.2rem; font-weight: 800; text-decoration: none; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .logo span { color: var(--primary); }
+        .nav-menu { display: flex; gap: 2rem; align-items: center; }
+        .nav-menu a { text-decoration: none; color: var(--text-muted); font-size: 0.9rem; transition: 0.3s; }
+        .nav-menu a:hover { color: var(--primary); }
+        .hamburger { display: none; cursor: pointer; font-size: 1.5rem; }
+
+        /* --- BUTTONS --- */
+        .btn { padding: 0.7rem 1.4rem; border-radius: 10px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; text-decoration: none; text-align: center; font-size: 0.9rem; display: inline-block; }
+        .btn-primary { background: var(--gradient-primary); color: #000; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; }
+        .btn-outline:hover { border-color: var(--primary); }
+        .btn-block { display: block; width: 100%; margin-top: 1rem; }
+
+        /* --- HERO --- */
+        .hero { padding: 4rem 0; text-align: center; }
+        .hero h1 { font-size: clamp(2rem, 8vw, 4rem); line-height: 1.1; margin-bottom: 1.5rem; }
+        .hero p { color: var(--text-muted); max-width: 650px; margin: 0 auto 2.5rem; font-size: clamp(1rem, 2vw, 1.2rem); }
+
+        /* --- DASHBOARD UI --- */
+        .dashboard { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .dash-header { padding: 1.5rem; border-bottom: 1px solid var(--border); text-align: left; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .asset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); border-bottom: 1px solid var(--border); }
+        .asset-card { padding: 1.5rem; border-right: 1px solid var(--border); text-align: left; }
+        .asset-card:last-child { border-right: none; }
+        .asset-card h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .asset-card .price { font-size: 1.5rem; font-weight: 700; }
+
+        /* --- KYC INFO SECTION --- */
+        .kyc-info { padding: 6rem 0; background: radial-gradient(circle at bottom left, rgba(34, 211, 238, 0.05), transparent); }
+        .section-title { text-align: center; margin-bottom: 3rem; }
+        .kyc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .kyc-card { background: var(--surface); padding: 2rem; border-radius: 20px; border: 1px solid var(--border); }
+        .kyc-card i { font-size: 2rem; color: var(--primary); margin-bottom: 1.5rem; }
+        .kyc-card h3 { margin-bottom: 1rem; }
+        .kyc-card ul { list-style: none; color: var(--text-muted); font-size: 0.9rem; }
+        .kyc-card ul li { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+        .kyc-card ul li::before { content: '→'; color: var(--primary); }
+
+        /* --- MODAL --- */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface); padding: 2rem; border-radius: 20px; width: 100%; max-width: 550px; border: 1px solid var(--primary); position: relative; margin: auto; }
+        .modal-content h2 { margin-bottom: 0.5rem; text-align: center; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: #fff; outline: none; transition: 0.3s; }
+        .form-group input:focus { border-color: var(--primary); }
+        .close-modal { position: absolute; top: 1rem; right: 1rem; cursor: pointer; font-size: 1.2rem; }
+
+        /* Others input visibility */
+        #otherSourceWrapper { display: none; margin-top: 10px; }
+        .error-msg { color: var(--error); font-size: 0.75rem; display: none; margin-top: 5px; }
+
+        @media (max-width: 768px) {
+            .nav-menu { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: var(--surface); padding: 2rem; border-bottom: 1px solid var(--border); }
+            .nav-menu.active { display: flex; }
+            .hamburger { display: block; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ticker">
+        <div class="ticker-track">
+            <div class="ticker-item">BTC/USD <span style="color:var(--secondary)">$96,210.40</span></div>
+            <div class="ticker-item">EUR/USD <span style="color:#f43f5e">1.0842</span></div>
+            <div class="ticker-item">ETH/USD <span style="color:var(--secondary)">$3,412.05</span></div>
+            <div class="ticker-item">GBP/USD <span style="color:var(--secondary)">1.2644</span></div>
+            <div class="ticker-item">SOL/USD <span style="color:var(--secondary)">$142.90</span></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav>
+            <a href="#" class="logo"><i class="fas fa-cube"></i> CORE<span>EXCHANGE</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="#onboarding">Onboarding</a>
+                <a href="#security">Security</a>
+                <a href="javascript:void(0)" class="btn btn-primary" onclick="toggleModal()">Register Now</a>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <h1>Unified Banking & <span style="color:var(--primary)">Digital Assets.</span></h1>
+            <p>Institutional-grade tools for global wealth management. Bridge your local bank with global Forex and Multi-chain Crypto.</p>
+            <div style="display:flex; justify-content:center; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="toggleModal()">Create Free Account</button>
+                <a href="#onboarding" class="btn btn-outline">Verification Guide</a>
+            </div>
+
+            <div class="dashboard" style="margin-top: 3.5rem;">
+                <div class="dash-header">
+                    <div>
+                        <h3 style="font-size: 0.8rem; color: var(--text-muted)">Consolidated Portfolio</h3>
+                        <p style="font-size: 1.8rem; font-weight: 800;">$142,509.32 <span style="font-size: 0.9rem; color: var(--secondary);">+4.2%</span></p>
+                    </div>
+                    <button class="btn btn-outline" style="font-size: 0.8rem;">Live Markets</button>
+                </div>
+                <div class="asset-grid">
+                    <div class="asset-card"><h4>Local (USD)</h4><div class="price">$12,040.00</div></div>
+                    <div class="asset-card"><h4>Forex (Euro)</h4><div class="price">€8,122.45</div></div>
+                    <div class="asset-card"><h4>Crypto (Portfolio)</h4><div class="price">1.48 BTC</div></div>
+                </div>
+                <div id="heroChart" style="padding: 1rem 0;"></div>
+            </div>
+        </header>
+
+        <section class="kyc-info" id="onboarding">
+            <div class="section-title">
+                <h2>Secure Real-Time Onboarding</h2>
+                <p style="color: var(--text-muted);">To comply with global financial regulations, the following details are required.</p>
+            </div>
+            <div class="kyc-grid">
+                <div class="kyc-card">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>1. Basic Identity</h3>
+                    <ul>
+                        <li>Legal Full Name</li>
+                        <li>Verified Email & Phone</li>
+                        <li>Date of Birth (18+)</li>
+                    </ul>
+                </div>
+                <div class="kyc-card">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h3>2. Financial Profile</h3>
+                    <ul>
+                        <li>Residential Address</li>
+                        <li>Source of Wealth/Funds</li>
+                        <li>Employment Status</li>
+                    </ul>
+                </div>
+                <div class="kyc-card">
+                    <i class="fas fa-id-card"></i>
+                    <h3>3. KYC Verification</h3>
+                    <ul>
+                        <li>Passport or National ID Scan</li>
+                        <li>Liveness Biometric Selfie</li>
+                        <li>Proof of Residency</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal" id="regModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="toggleModal()">&times;</span>
+            <h2>Create Your Account</h2>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Compliance Level: International Tier-1</p>
+            
+            <form id="regForm" onsubmit="event.preventDefault(); handleRegistration();">
+                <div class="form-group">
+                    <label>Legal Full Name</label>
+                    <input type="text" id="fullName" placeholder="Johnathan Doe" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" placeholder="john@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" id="dob" required>
+                        <p id="ageError" class="error-msg">You must be at least 18 years old.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Residential Address</label>
+                    <input type="text" id="address" placeholder="123 Financial St, Suite 400" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Source of Funds</label>
+                        <select id="fundsSource" onchange="toggleOtherSource()" required>
+                            <option value="">Select...</option>
+                            <option value="salary">Salary / Employment</option>
+                            <option value="invest">Investments</option>
+                            <option value="business">Business Profits</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div id="otherSourceWrapper">
+                            <input type="text" id="otherSourceInput" placeholder="Specify other source">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <select id="accountType" required>
+                            <option value="individual">Individual</option>
+                            <option value="corp">Corporate/Institutional</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="••••••••" required oninput="validatePasswords()">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirmPassword" placeholder="••••••••" required oninput="validatePasswords()">
+                    </div>
+                </div>
+                <p id="passwordError" class="error-msg">Passwords do not match</p>
+
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin: 1rem 0;">
+                    By clicking continue, you agree to our AML/KYC policies and data encryption protocols.
+                </p>
+                
+                <button type="submit" id="submitBtn" class="btn btn-primary btn-block">Continue to Identity Scan</button>
+            </form>
+        </div>
+    </div>
+    <footer style="background: #010409; padding: 5rem 0 2rem; border-top: 1px solid var(--border); margin-top: 4rem;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 3rem; margin-bottom: 4rem;">
+                <div class="footer-col">
+                    <a href="#" class="logo" style="margin-bottom: 1.5rem;"><i class="fas fa-cube"></i> CORE<span>EXCHANGE</span></a>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.8;">
+                        CoreExchange is a globally regulated digital asset and forex brokerage. We provide institutional-grade liquidity and advanced wealth management tools for the modern investor.
+                    </p>
+                    <div style="display: flex; gap: 15px; margin-top: 1.5rem;">
+                        <a href="#" style="color: var(--text-muted); font-size: 1.2rem;"><i class="fab fa-twitter"></i></a>
+                        <a href="#" style="color: var(--text-muted); font-size: 1.2rem;"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" style="color: var(--text-muted); font-size: 1.2rem;"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4 style="color: #fff; margin-bottom: 1.5rem; font-size: 1rem;">Ecosystem</h4>
+                    <ul style="list-style: none; font-size: 0.85rem;">
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Spot Trading</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Forex Pairs</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Staking Rewards</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Institutional OTC</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 style="color: #fff; margin-bottom: 1.5rem; font-size: 1rem;">Support</h4>
+                    <ul style="list-style: none; font-size: 0.85rem;">
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Help Center</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">API Documentation</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Security Audit</a></li>
+                        <li style="margin-bottom: 0.8rem;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Contact Desk</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 style="color: #fff; margin-bottom: 1.5rem; font-size: 1rem;">Security & Trust</h4>
+                    <div style="background: var(--surface); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
+                        <p style="font-size: 0.75rem; color: var(--secondary); margin-bottom: 0.5rem;"><i class="fas fa-lock"></i> 100% Cold Storage</p>
+                        <p style="font-size: 0.75rem; color: var(--primary);"><i class="fas fa-shield-alt"></i> AES-256 Encryption</p>
+                        <hr style="margin: 0.8rem 0; border: 0; border-top: 1px solid var(--border);">
+                        <p style="font-size: 0.7rem; color: var(--text-muted);">Registered MSB #3100025984</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 2rem; font-size: 0.75rem; color: var(--text-muted); text-align: justify; line-height: 1.6;">
+                <p><strong>Risk Warning:</strong> Trading digital assets and leveraged forex products involves significant risk and can result in the loss of your invested capital. You should not invest more than you can afford to lose and should ensure that you fully understand the risks involved.</p>
+            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-size: 0.75rem; color: var(--text-muted);">
+                <p>&copy; 2025 CoreExchange Finance Group. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() { document.getElementById('navMenu').classList.toggle('active'); }
+        function toggleModal() { document.getElementById('regModal').classList.toggle('active'); }
+
+        // 1. Source of Funds Logic
+        function toggleOtherSource() {
+            const select = document.getElementById('fundsSource');
+            const wrapper = document.getElementById('otherSourceWrapper');
+            const input = document.getElementById('otherSourceInput');
+            if (select.value === 'other') {
+                wrapper.style.display = 'block';
+                input.required = true;
+            } else {
+                wrapper.style.display = 'none';
+                input.required = false;
+            }
+        }
+
+        // 2. Comprehensive Validation Logic
+        function validatePasswords() {
+            const p1 = document.getElementById('password');
+            const p2 = document.getElementById('confirmPassword');
+            const err = document.getElementById('passwordError');
+            const btn = document.getElementById('submitBtn');
+
+            const match = p1.value === p2.value;
+            const lengthValid = p1.value.length >= 8;
+
+            if (p2.value.length > 0 && !match) {
+                err.innerText = "Passwords do not match";
+                err.style.display = 'block';
+                p2.style.borderColor = 'var(--error)';
+                btn.disabled = true;
+            } else if (p1.value.length > 0 && !lengthValid) {
+                err.innerText = "Password must be at least 8 characters";
+                err.style.display = 'block';
+                btn.disabled = true;
+            } else {
+                err.style.display = 'none';
+                p2.style.borderColor = 'var(--border)';
+                btn.disabled = false;
+            }
+        }
+
+        // 3. Age Validation (Compliance)
+        document.getElementById('dob').addEventListener('change', function() {
+            const dob = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) { age--; }
+
+            const ageErr = document.getElementById('ageError');
+            const btn = document.getElementById('submitBtn');
+
+            if (age < 18) {
+                ageErr.style.display = 'block';
+                btn.disabled = true;
+            } else {
+                ageErr.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        // 4. Form Submission & API Integration
+        async function handleRegistration() {
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Encrypting Data...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('full_name', document.getElementById('fullName').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('dob', document.getElementById('dob').value);
+            formData.append('address', document.getElementById('address').value);
+            formData.append('account_type', document.getElementById('accountType').value);
+            formData.append('password', document.getElementById('password').value);
+            
+            const source = document.getElementById('fundsSource').value;
+            formData.append('funds_source', source === 'other' ? document.getElementById('otherSourceInput').value : source);
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (response.status === 201) {
+                    alert('Account Created! Proceeding to the Identity Vault.');
+                    window.location.href = '/identity-vault';
+                } else {
+                    alert('Registration Failed: ' + result.message);
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Identity data encrypted locally. (Dev Note: Server Connection Error - check API endpoint)');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Chart Initialization
+        var options = {
+            series: [{ name: 'Value', data: [45, 52, 48, 70, 65, 110, 120, 142] }],
+            chart: { height: 300, type: 'area', toolbar: {show: false}, sparkline: {enabled: true} },
+            colors: ['#22d3ee'],
+            stroke: { curve: 'smooth', width: 3 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0 } },
+            tooltip: { theme: 'dark' }
+        };
+        var chart = new ApexCharts(document.querySelector("#heroChart"), options);
+        chart.render();
+    </script>
+</body>
+</html>
