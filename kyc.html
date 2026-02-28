@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreExchange | Identity Vault</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #020617;
+            --surface: #0f172a;
+            --surface-light: #1e293b;
+            --primary: #22d3ee;
+            --secondary: #10b981;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --error: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .v-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .v-card { background: var(--surface); width: 100%; max-width: 500px; border-radius: 24px; border: 1px solid var(--border); padding: 2.5rem; text-align: center; position: relative; }
+        
+        .step-pill { display: inline-block; background: rgba(34, 211, 238, 0.1); color: var(--primary); padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 1rem; }
+
+        /* --- IMPROVED PHONE INPUT --- */
+        .phone-group { text-align: left; margin-bottom: 1.5rem; }
+        .phone-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; margin-left: 4px; }
+        .phone-input-wrapper { display: flex; gap: 8px; flex-direction: column; }
+        
+        #countryCode { 
+            background: var(--surface-light); 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            padding: 0.8rem; 
+            border-radius: 12px; 
+            width: 100%; 
+            outline: none;
+            cursor: pointer;
+        }
+        
+        #phoneNumber { 
+            flex: 1; 
+            background: var(--surface-light); 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            padding: 0.8rem; 
+            border-radius: 12px; 
+            outline: none; 
+            transition: 0.3s; 
+        }
+        #phoneNumber:focus { border-color: var(--primary); }
+        
+        .camera-container { width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 16px; margin: 1.5rem 0; position: relative; overflow: hidden; border: 2px solid var(--border); }
+        #videoFeed, #videoFeed2 { width: 100%; height: 100%; object-fit: cover; }
+        
+        .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .id-guide { width: 85%; height: 70%; border: 2px dashed var(--primary); border-radius: 12px; box-shadow: 0 0 0 500px rgba(0,0,0,0.6); }
+        .face-guide { width: 220px; height: 220px; border: 3px solid var(--primary); border-radius: 50%; box-shadow: 0 0 0 500px rgba(0,0,0,0.6); }
+        
+        .scan-anim { position: absolute; width: 100%; height: 2px; background: var(--primary); top: 0; animation: scan 3s infinite ease-in-out; box-shadow: 0 0 15px var(--primary); }
+        @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+
+        .upload-zone { border: 2px dashed var(--border); padding: 2rem; border-radius: 16px; margin: 1.5rem 0; cursor: pointer; transition: 0.3s; }
+        .upload-zone:hover { border-color: var(--primary); background: rgba(34, 211, 238, 0.05); }
+
+        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="v-container">
+        <div id="step1" class="v-card">
+            <span class="step-pill">STEP 1 of 3</span>
+            <h2>Verify Phone & ID</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Select your country and enter your number</p>
+
+            <div class="phone-group">
+                <label>Mobile Phone Number</label>
+                <div class="phone-input-wrapper">
+                    <select id="countryCode">
+                        <option value="">Loading countries...</option>
+                    </select>
+                    <input type="tel" id="phoneNumber" placeholder="Mobile number" required>
+                </div>
+            </div>
+            
+            <div class="camera-container">
+                <video id="videoFeed" autoplay playsinline></video>
+                <div class="overlay"><div id="idFrame" class="id-guide"></div></div>
+                <div id="scannerLine" class="scan-anim" style="display:none;"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="captureDocument()">Capture ID</button>
+        </div>
+
+        <div id="step2" class="v-card hidden">
+            <span class="step-pill">STEP 2 of 3</span>
+            <h2>Liveness Check</h2>
+            <div class="camera-container">
+                <video id="videoFeed2" autoplay playsinline style="transform: scaleX(-1);"></video>
+                <div class="overlay"><div class="face-guide"></div></div>
+                <div id="faceScanner" class="scan-anim"></div>
+            </div>
+            <p id="bioStatus" style="color: var(--primary); font-weight: 700; margin-bottom: 1rem;">Analyzing Face...</p>
+            <button class="btn btn-primary" id="bioBtn" disabled onclick="toStep3()">Complete Liveness</button>
+        </div>
+
+        <div id="step3" class="v-card hidden">
+            <span class="step-pill">STEP 3 of 3</span>
+            <h2>Proof of Residency</h2>
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-file-invoice" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                <p id="fileName">Click to upload document</p>
+                <input type="file" id="fileInput" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFile(this)">
+            </div>
+            <button class="btn btn-primary" id="finalBtn" disabled onclick="finish()">Submit Verification</button>
+        </div>
+
+        <div id="stepSuccess" class="v-card hidden">
+            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--secondary); margin-bottom: 1rem;"></i>
+            <h2>All Set!</h2>
+            <p style="color: var(--text-muted);">Verification submitted successfully.</p>
+            <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="window.location.href='/logout'">Back to Home</button>
+        </div>
+    </div>
+
+    <script>
+        let stream;
+
+        // Fetch Global Country Codes
+        async function loadCountryCodes() {
+            try {
+                const response = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flag');
+                const countries = await response.json();
+                const select = document.getElementById('countryCode');
+                select.innerHTML = ''; // Clear loading
+
+                // Sort alphabetically
+                countries.sort((a, b) => a.name.common.localeCompare(b.name.common));
+
+                countries.forEach(country => {
+                    if (country.idd.root) {
+                        const code = country.idd.root + (country.idd.suffixes ? country.idd.suffixes[0] : '');
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.innerHTML = `${country.flag} ${country.name.common} (${code})`;
+                        select.appendChild(option);
+                    }
+                });
+                
+                // Set default to US or Nigeria as example
+                select.value = "+1";
+            } catch (e) {
+                console.error("Error loading countries", e);
+                document.getElementById('countryCode').innerHTML = '<option value="+1">🇺🇸 United States (+1)</option>';
+            }
+        }
+
+        async function startCamera(videoElementId) {
+            if (stream) { stream.getTracks().forEach(track => track.stop()); }
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                document.getElementById(videoElementId).srcObject = stream;
+            } catch (err) {
+                alert("Camera access denied.");
+            }
+        }
+
+        async function captureDocument() {
+            if (!document.getElementById('phoneNumber').value) {
+                alert("Please enter your phone number."); return;
+            }
+            document.getElementById('scannerLine').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                startCamera('videoFeed2');
+                runBiometricSim();
+            }, 2000);
+        }
+
+        function runBiometricSim() {
+            const status = document.getElementById('bioStatus');
+            const btn = document.getElementById('bioBtn');
+            setTimeout(() => status.innerText = "Blink your eyes...", 1500);
+            setTimeout(() => {
+                status.innerText = "Liveness Verified ✓";
+                status.style.color = "var(--secondary)";
+                btn.disabled = false;
+            }, 4000);
+        }
+
+        function toStep3() {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+        }
+
+        function handleFile(input) {
+            if (input.files[0]) {
+                document.getElementById('fileName').innerText = input.files[0].name;
+                document.getElementById('finalBtn').disabled = false;
+            }
+        }
+
+        async function finish() {
+            const btn = document.getElementById('finalBtn');
+            const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
+            const file = document.getElementById('fileInput').files[0];
+            
+            btn.disabled = true;
+            btn.innerText = "Uploading...";
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('phone', phone);
+
+            try {
+                const response = await fetch('/upload-kyc', { method: 'POST', body: formData });
+                if (response.ok) {
+                    document.getElementById('step3').classList.add('hidden');
+                    document.getElementById('stepSuccess').classList.remove('hidden');
+                } else {
+                    alert("Submission failed.");
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Connection error.");
+                btn.disabled = false;
+            }
+        }
+
+        window.onload = () => {
+            loadCountryCodes();
+            startCamera('videoFeed');
+        };
+    </script>
+</body>
+</html>
